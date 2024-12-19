@@ -107,15 +107,6 @@ tape('soa', function (t) {
   t.end()
 })
 
-tape('sshfp', function (t) {
-  testEncoder(t, packet.sshfp, {
-    algorithm: 1,
-    hash: 1,
-    fingerprint: 'A108C9F834354D5B37AF988141C9294822F5BC00'
-  })
-  t.end()
-})
-
 tape('a', function (t) {
   testEncoder(t, packet.a, '127.0.0.1')
   t.end()
@@ -310,87 +301,6 @@ tape('name_encoding', function (t) {
   t.ok(packet.name.encode.bytes === 1, 'name encoding length matches')
   dd = packet.name.decode(buf, offset)
   t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  data = 'a.b.c.d.example.com'
-  packet.name.encode(data, buf, offset, { mail: false })
-  t.ok(packet.name.encode.bytes === 21, 'name (mail) encoding length matches')
-  dd = packet.name.decode(buf, offset)
-  t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  data = 'a.b.c.d.example.com'
-  packet.name.encode(data, buf, offset, { mail: true })
-  t.ok(packet.name.encode.bytes === 21, 'name (mail) encoding length matches')
-  dd = packet.name.decode(buf, offset)
-  t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  data = 'a\\.b.c.d.example.com'
-  packet.name.encode(data, buf, offset, { mail: true })
-  t.ok(packet.name.encode.bytes === 21, 'name (mail) encoding length matches')
-  dd = packet.name.decode(buf, offset, { mail: true })
-  t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  data = 'a\\.b\\.c.d.example.com'
-  packet.name.encode(data, buf, offset, { mail: true })
-  t.ok(packet.name.encode.bytes === 21, 'name (mail) encoding length matches')
-  dd = packet.name.decode(buf, offset, { mail: true })
-  t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  data = 'root\\.mail'
-  packet.name.encode(data, buf, offset, { mail: true })
-  t.ok(packet.name.encode.bytes === 11, 'name (mail) encoding length matches')
-  dd = packet.name.decode(buf, offset, { mail: true })
-  t.ok(data === dd, 'encode/decode matches')
-  offset += packet.name.encode.bytes
-
-  t.end()
-})
-
-tape('name_decoding', function (t) {
-  // The two most significant bits of a valid label header must be either both zero or both one
-  t.throws(function () { packet.name.decode(Buffer.from([0x80])) }, /Cannot decode name \(bad label\)$/)
-  t.throws(function () { packet.name.decode(Buffer.from([0xb0])) }, /Cannot decode name \(bad label\)$/)
-
-  // Ensure there's enough buffer to read
-  t.throws(function () { packet.name.decode(Buffer.from([])) }, /Cannot decode name \(buffer overflow\)$/)
-  t.throws(function () { packet.name.decode(Buffer.from([0x01, 0x00])) }, /Cannot decode name \(buffer overflow\)$/)
-  t.throws(function () { packet.name.decode(Buffer.from([0x01])) }, /Cannot decode name \(buffer overflow\)$/)
-  t.throws(function () { packet.name.decode(Buffer.from([0xc0])) }, /Cannot decode name \(buffer overflow\)$/)
-
-  // Allow only pointers backwards
-  t.throws(function () { packet.name.decode(Buffer.from([0xc0, 0x00])) }, /Cannot decode name \(bad pointer\)$/)
-  t.throws(function () { packet.name.decode(Buffer.from([0xc0, 0x01])) }, /Cannot decode name \(bad pointer\)$/)
-
-  // A name can be only 253 characters (when connected with dots)
-  const maxLength = Buffer.alloc(255)
-  maxLength.fill(Buffer.from([0x01, 0x61]), 0, 254)
-  t.ok(packet.name.decode(maxLength) === new Array(127).fill('a').join('.'))
-
-  const tooLong = Buffer.alloc(256)
-  tooLong.fill(Buffer.from([0x01, 0x61]))
-  t.throws(function () { packet.name.decode(tooLong) }, /Cannot decode name \(name too long\)$/)
-
-  // Ensure jumps don't reset the total length counter
-  const tooLongWithJump = Buffer.alloc(403)
-  tooLongWithJump.fill(Buffer.from([0x01, 0x61]), 0, 200)
-  tooLongWithJump.fill(Buffer.from([0x01, 0x61]), 201, 401)
-  tooLongWithJump.set([0xc0, 0x00], 401)
-  t.throws(function () { packet.name.decode(tooLongWithJump, 201) }, /Cannot decode name \(name too long\)$/)
-
-  // Ensure a jump to a null byte doesn't add extra dots
-  t.ok(packet.name.decode(Buffer.from([0x00, 0x01, 0x61, 0xc0, 0x00]), 1) === 'a')
-
-  // Ensure deeply nested pointers don't cause "Maximum call stack size exceeded" errors
-  const buf = Buffer.alloc(16386)
-  for (let i = 0; i < 16384; i += 2) {
-    buf.writeUInt16BE(0xc000 | i, i + 2)
-  }
-  t.ok(packet.name.decode(buf, 16384) === '.')
-
   t.end()
 })
 
@@ -589,28 +499,6 @@ tape('ds', function (t) {
     algorithm: 1,
     digestType: 1,
     digest: Buffer.from([0, 1, 2, 3, 4, 5])
-  })
-  t.end()
-})
-
-tape('naptr', function (t) {
-  testEncoder(t, packet.naptr, {
-    order: 1,
-    preference: 1,
-    flags: 'S',
-    services: 'SIP+D2T',
-    regexp: '!^.*$!sip:customer-service@xuexample.com!',
-    replacement: '_sip._udp.xuexample.com'
-  })
-  t.end()
-})
-
-tape('tlsa', function (t) {
-  testEncoder(t, packet.tlsa, {
-    usage: 3,
-    selector: 1,
-    matchingType: 1,
-    certificate: Buffer.from([0, 1, 2, 3, 4, 5])
   })
   t.end()
 })

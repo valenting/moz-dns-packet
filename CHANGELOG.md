@@ -1,15 +1,3 @@
-# Version 5.6.0 - 2023-04-18
-
-- Feature: Added support for the TLSA record type.
-
-# Version 5.5.0 - 2023-03-27
-
-- Feature: Added support for the NAPTR record type.
-
-# Version 5.4.0 - 2022-06-14
-
-- Feature: Added support for the SSHFP record type.
-
 # Version 5.2.0 - 2019-02-21
 
 - Feature: Added support for de/encoding certain OPT options.

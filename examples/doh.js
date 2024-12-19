@@ -26,12 +26,12 @@ const buf = dnsPacket.encode({
 })
 
 const options = {
-  hostname: 'dns.google',
+  hostname: 'dns.google.com',
   port: 443,
-  path: '/dns-query',
+  path: '/experimental',
   method: 'POST',
   headers: {
-    'Content-Type': 'application/dns-message',
+    'Content-Type': 'application/dns-udpwireformat',
     'Content-Length': Buffer.byteLength(buf)
   }
 }
